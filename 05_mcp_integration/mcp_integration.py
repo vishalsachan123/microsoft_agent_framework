@@ -1,0 +1,59 @@
+
+# ============================================================
+# 05 - MAF Agent using Local FastMCP stdio Server
+# ============================================================
+
+# --- SECTION 1: IMPORTS ---
+import asyncio
+import sys
+from agent_framework import Agent, MCPStdioTool
+from agent_framework.openai import OpenAIChatClient
+from dotenv import load_dotenv
+from pathlib import Path
+
+# Add project root to Python path
+# sys.path : A list of folders where Python looks for modules.
+sys.path.append(str(Path(__file__).resolve().parent.parent))
+from clients import az_client
+
+# --- SECTION 2: CONFIGURATION ---
+
+load_dotenv()
+
+
+# --- SECTION 3: RUN ---
+async def main():
+    async with (
+        MCPStdioTool(
+            name="local-dev-tools",  # must match FastMCP server name
+            command=sys.executable,  # path to current Python interpreter
+            args=["05_mcp_integration/mcp_server.py"],  # your FastMCP server script
+        ) as mcp_tool,
+        Agent(
+            client=az_client,
+            name="MCPAgent",
+            instructions=(
+                "You are Yash's local developer assistant with filesystem and system tools via MCP. "
+                "Always use the available tools for files, time, calculations, and system info. "
+                "Never guess file contents — always read them."
+            ),
+        ) as agent,
+    ):
+        prompts = [
+            "What is today's date and time?",
+            "List all files in the current directory (path = '.')",
+            "Write a file 'hello_maf.txt' with content: 'Hello from Yash using MAF + FastMCP!'",
+            "Read the file 'hello_maf.txt' and tell me what is inside.",
+            "What Python version am I running and what OS?",
+            "Calculate 2 ** 10 + 24",
+        ]
+
+        for prompt in prompts:
+            print(f"\n💬 Yash: {prompt}")
+            # tools passed to agent.run() — NOT to Agent() constructor
+            result = await agent.run(prompt, tools=mcp_tool)
+            print(f"🤖 Agent: {result}")
+            input()
+
+
+asyncio.run(main())

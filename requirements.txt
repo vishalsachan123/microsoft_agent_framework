@@ -1,0 +1,11 @@
+agent-framework
+agent-framework-openai
+agent-framework-orchestrations
+agent-framework-a2a
+pydantic
+requests
+python-dotenv
+fastmcp
+uvicorn
+starlette
+fastapi
